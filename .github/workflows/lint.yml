@@ -11,7 +11,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - name: Black
-        uses: psf/black-action@stable
-        with:
-          args: ". --check"
+      - name: Install Black
+        run: pip install black
+      - name: Run Black
+        run: black --check .
