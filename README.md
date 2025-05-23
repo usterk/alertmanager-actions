@@ -59,6 +59,15 @@ It's possible to read a more complete step by step documentation
 Also, there's a docker image you may use in [Docker
 Hub](https://hub.docker.com/repository/docker/littleangryclouds/alertmanager-actions).
 
+## Docker Image
+
+The Docker images are available for both `amd64` and `arm64` architectures.
+You can pull the `arm64` image using the following command:
+
+```bash
+docker pull littleangryclouds/alertmanager-actions --platform linux/arm64
+```
+
 ## Metrics
 It exposes some prometheus metrics. The ones that come with
 [Pyms](https://py-ms.readthedocs.io/en/latest/services/#metrics)
