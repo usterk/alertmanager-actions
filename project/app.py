@@ -113,7 +113,9 @@ class AlertmanagerActions:
                         self._unlock_action(action["name"])
         return "OK"
 
-    def _execute_command(self, command, received_labels, config_labels, action_name, timeout):
+    def _execute_command(
+        self, command, received_labels, config_labels, action_name, timeout
+    ):
         # Make available all labels through environmental variables
         env = environ.copy()
         for k, v in received_labels:
