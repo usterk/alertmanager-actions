@@ -8,7 +8,7 @@ py-ms = {extras = ["all"],version = "==2.5.0"}
 flask-script = "*"
 
 [requires]
-python_version = "3.6"
+python_version = "3.11"
 
 [pipenv]
 allow_prereleases = true
