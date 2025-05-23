@@ -9,9 +9,26 @@ pyms:
     app_name: alertmanager-actions
 
 alertmanager_actions:
-  - name: TestActions
+  - name: TestActions # Modified to use new structure
     labels:
-      alertname: TestActions
-    command:
-      - echo $ACTION
-      - echo $ALERTNAME
+      alertname: TestActions # Keep existing labels for matching
+      severity: critical    # Added another label for demonstration
+    on_firing:
+      command:
+        - echo "FIRING: Alert $ALERTNAME ($SEVERITY) for action $ACTION"
+        - echo "All labels: $(env | grep '^ALERTMANAGER_')" # Example to show available env vars
+      timeout: 120
+    on_resolved:
+      command:
+        - echo "RESOLVED: Alert $ALERTNAME ($SEVERITY) for action $ACTION"
+      timeout: 60
+    # Old 'command' field removed from TestActions to demonstrate new structure clearly
+
+  - name: OldStyleActionExample # Example for backward compatibility
+    labels:
+      alertname: LegacyAlert
+    command: # This will be treated as on_firing by the updated read_config
+      - echo "LegacyAlert FIRING (using old command field)"
+      - echo "Details: $ALERTNAME, $SEVERITY, $INSTANCE"
+    # No top-level timeout here, will use default (180s) or one specified if it were present
+---
