@@ -29,7 +29,7 @@ config:
       labels:
         alertname: NginxDown
         action: restart
-      command:
+      command: # This is the legacy way, treated as 'on_firing'
         - ssh -o StrictHostKeyChecking=no -i /secrets/ssh-key ec2-user@$PRIVATE_IP sudo systemctl restart nginx
 ```
 
@@ -45,13 +45,75 @@ All secrets are mounted in the cointanier in `/secrets/`. So, the defined secret
 will be in a file in the container in `/secrets/ssh-key`.
 
 The last part, the actions. In the example there's defined an action called
-`NginxDown` that will be activated if an alert with the labels `alertname` with
-value `NginxDown` and `action` with value `restart` are received. When received,
-it will execute the command. The command is pretty plain, but it has something
-special. The environmental variable `$PRIVATE_IP`. This is one of the strongest
-features, all alert labels are passed as environmental variables to the command.
-In the example, it's assumed that the triggered alert has one label called
-`$PRIVATE_IP` that contains the IP that can be used to reach the service.
+`NginxDown`. When an alert matching its `labels` is received, a command is executed.
+The command is pretty plain, but it has something special. The environmental variable
+`$PRIVATE_IP`. This is one of the strongest features, all alert labels are passed as
+environmental variables to the command. In the example, it's assumed that the
+triggered alert has one label called `$PRIVATE_IP` that contains the IP that can
+be used to reach the service.
+
+This example uses the legacy `command:` field. For more granular control based on
+alert status, see the "Status-Aware Actions" section below.
+
+### Status-Aware Actions (Firing and Resolved)
+
+You can configure different commands and timeouts based on whether an alert is 'firing'
+or 'resolved'. This is done using the `on_firing` and `on_resolved` directives
+within an action block.
+
+Each of these directives (`on_firing`, `on_resolved`) can contain:
+- `command`: A list of strings representing the command(s) to execute. This is mandatory if the directive (`on_firing` or `on_resolved`) is used.
+- `timeout`: An optional integer specifying the timeout in seconds for the command. If not provided, it defaults to 180 seconds.
+
+Here's an example:
+
+```yaml
+alertmanager_actions:
+  - name: ExampleStatusAction
+    labels:
+      alertname: MyTestAlert
+      service: MyService
+    on_firing:
+      command:
+        - echo "ALERT MyTestAlert for MyService is FIRING!"
+        - echo "Instance: $INSTANCE, Severity: $SEVERITY" # Example of using env vars
+      timeout: 120 # Optional timeout for firing commands
+    on_resolved:
+      command:
+        - echo "ALERT MyTestAlert for MyService is RESOLVED!"
+        - echo "Instance: $INSTANCE, Severity: $SEVERITY has cleared."
+      timeout: 60 # Optional timeout for resolved commands
+  
+  - name: FiringOnlyExample
+    labels:
+      alertname: AnotherAlert
+    on_firing:
+      command: ["/usr/local/bin/handle_another_alert_firing.sh"]
+      # timeout will default to 180s
+
+  - name: OldStyleForComparison
+    labels:
+      alertname: LegacyAlert
+    command: # This will be treated as on_firing
+      - echo "LegacyAlert FIRING (using old command field)"
+    # timeout, if specified here, would also apply to the on_firing command. Otherwise, defaults to 180s.
+```
+
+**Backward Compatibility:**
+- If `on_firing` is **not** defined for an action, but a top-level `command` field exists, that top-level `command` and its associated top-level `timeout` (if any) will be used for 'firing' alerts.
+- If `on_firing` **is** defined, it takes precedence over any top-level `command` field for 'firing' alerts.
+- The `on_resolved` directive only works if explicitly defined. There is no fallback to the top-level `command` for resolved alerts.
+
+**Important Note for Resolved Alerts:**
+For `alertmanager-actions` to receive and act upon 'resolved' notifications, Alertmanager itself must be configured to send them. Ensure `send_resolved: true` is set in your Alertmanager webhook configuration that points to `alertmanager-actions`. Example:
+
+```yaml
+receivers:
+- name: 'alertmanager-actions-webhook'
+  webhook_configs:
+  - url: 'http://<alertmanager-actions-host>:<port>/'
+    send_resolved: true # This is crucial
+```
 
 ### Plain box
 TBD
@@ -82,8 +144,8 @@ The receiver itself is a webhook, its configuration it's pretty simple:
 receivers:
 - name: alertmanager-actions
   webhook_configs:
-  - send_resolved: false
-    url: "http://alertmanager-actions/"
+  - send_resolved: true # Set this to true to enable on_resolved actions
+    url: "http://alertmanager-actions/" # Adjust URL as necessary
 ```
 
 ## Configure the alert

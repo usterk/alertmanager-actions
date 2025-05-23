@@ -13,7 +13,8 @@ An Alert Manager
 executes arbitrary commands when receiving alerts.
 
 It's dead simple. You associate alert labels to an action, and it will execute
-the action.
+the action. It supports executing different commands for 'firing' and 'resolved'
+alert statuses, allowing for more granular control over your alert responses.
 
 ## Configuration
 This program uses [pyms](https://github.com/python-microservices/pyms), the cool
@@ -53,8 +54,8 @@ alertmanager_actions:
     command: ssh -i /home/user/.ssh/id_rsa user@mycoolbox.com hostname
 ```
 
-It's possible to read a more complete step by step documentation
-[here](./docs/configuration.md).
+It's possible to read a more complete step by step documentation in the
+[configuration guide](./docs/configuration.md).
 
 Also, there's a docker image you may use in [Docker
 Hub](https://hub.docker.com/repository/docker/littleangryclouds/alertmanager-actions).
